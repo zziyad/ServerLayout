@@ -1,0 +1,4 @@
+DO $$ BEGIN
+  CREATE ROLE zi;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
