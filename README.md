@@ -2,13 +2,11 @@
 
 Повторяемый бэкенд: session auth, RBAC, validator, notification, email.
 
-Полное описание — что умеет, как устроен, как поднять:
-
 **[docs/PLATFORM.md](docs/PLATFORM.md)**
 
-Зафиксированные решения: [docs/ADR-001-platform.md](docs/ADR-001-platform.md)  
-Работы по фазам: [todo/PHASES.md](todo/PHASES.md)  
-Правила агента: [AGENTS.project.md](AGENTS.project.md)
+Решения: [docs/ADR-001-platform.md](docs/ADR-001-platform.md), [docs/ADR-002-file-search.md](docs/ADR-002-file-search.md)  
+Фазы: [todo/PHASES.md](todo/PHASES.md)  
+Агент: [AGENTS.project.md](AGENTS.project.md)
 
 ```
 npm start
