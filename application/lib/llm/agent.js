@@ -21,6 +21,7 @@
       });
     }
     if (calls.length > 0) return calls;
+
     const content = String(message?.content || '');
     const blocks = content.matchAll(/<tool_call>\s*([\s\S]*?)<\/tool_call>/g);
     for (const match of blocks) {
@@ -34,17 +35,25 @@
         });
       } catch {
         const name = inner.split(/\s+/)[0];
-        if (name) calls.push({ id: `call_${calls.length + 1}`, name, arguments: {} });
+        if (name) {
+          calls.push({
+            id: `call_${calls.length + 1}`,
+            name,
+            arguments: {},
+          });
+        }
       }
     }
     return calls.filter((call) => call.name);
   },
+
   run: async (payload, context) => {
     if (!config.llm.enabled) {
       const error = new Error('LLM is disabled');
       error.code = 'LLM_DISABLED';
       throw error;
     }
+
     const incoming = Array.isArray(payload.messages) ? payload.messages : [];
     const history = [];
     history.push({ role: 'system', content: config.llm.systemPrompt });
@@ -57,33 +66,63 @@
         ...(item.tool_calls ? { tool_calls: item.tool_calls } : {}),
       });
     }
-    if (payload.message) history.push({ role: 'user', content: String(payload.message) });
+    if (payload.message) {
+      history.push({ role: 'user', content: String(payload.message) });
+    }
+
     const tools = lib.llm.tools.definitions();
     const maxSteps = Number(config.llm.maxSteps || 8);
     const trace = [];
     const signal = context?.signal;
+
     for (let step = 0; step < maxSteps; step += 1) {
-      const completion = await lib.llm.client.chat({ messages: history, tools, signal });
+      const completion = await lib.llm.client.chat({
+        messages: history,
+        tools,
+        signal,
+      });
       const message = completion.message || { role: 'assistant', content: '' };
       const calls = lib.llm.agent.extractToolCalls(message);
+
       if (calls.length === 0) {
-        return { answer: String(message.content || '').trim(), steps: step + 1, finishReason: completion.finishReason, trace };
+        return {
+          answer: String(message.content || '').trim(),
+          steps: step + 1,
+          finishReason: completion.finishReason,
+          trace,
+        };
       }
+
       history.push({
         role: 'assistant',
         content: message.content || '',
         tool_calls: message.tool_calls || calls.map((call) => ({
-          id: call.id, type: 'function',
-          function: { name: call.name, arguments: JSON.stringify(call.arguments || {}) },
+          id: call.id,
+          type: 'function',
+          function: {
+            name: call.name,
+            arguments: JSON.stringify(call.arguments || {}),
+          },
         })),
       });
+
       for (const call of calls) {
         const result = await lib.llm.tools.execute(call, context);
         const content = lib.llm.tools.clip(result);
-        trace.push({ step: step + 1, name: call.name, arguments: call.arguments, result });
-        history.push({ role: 'tool', tool_call_id: call.id, content });
+        trace.push({
+          step: step + 1,
+          name: call.name,
+          arguments: call.arguments,
+          result,
+        });
+        history.push({
+          role: 'tool',
+          tool_call_id: call.id,
+          content,
+        });
       }
     }
+
     const error = new Error(`Agent stopped after ${maxSteps} tool steps`);
     error.code = 'AGENT_MAX_STEPS';
     error.trace = trace;

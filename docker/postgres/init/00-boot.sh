@@ -14,8 +14,16 @@ run_sql "$DB/auth_schema.sql"
 echo "postgres init: bootstrap admin@gp.com"
 $psql_cmd <<'SQL'
 INSERT INTO public."User" (
-  id, email, username, password_hash, first_name, last_name,
-  display_name, employee_id, is_active, is_deleted
+  id,
+  email,
+  username,
+  password_hash,
+  first_name,
+  last_name,
+  display_name,
+  employee_id,
+  is_active,
+  is_deleted
 )
 VALUES (
   'bd911b56-fe1b-4fa7-81a7-a67bbc107ce3',
@@ -51,16 +59,26 @@ done
 
 echo "postgres init: assign super_admin + admin"
 $psql_cmd <<'SQL'
-INSERT INTO public."UserRole" (user_id, role_id, assigned_by, is_active, is_deleted)
+INSERT INTO public."UserRole" (
+  user_id,
+  role_id,
+  assigned_by,
+  is_active,
+  is_deleted
+)
 SELECT u.id, r.id, u.id, true, false
 FROM public."User" u
 JOIN public."Role" r
-  ON r.name IN ('super_admin', 'admin') AND r.is_deleted = false
+  ON r.name IN ('super_admin', 'admin')
+ AND r.is_deleted = false
 WHERE u.email = 'admin@gp.com'
   AND u.is_deleted = false
   AND NOT EXISTS (
-    SELECT 1 FROM public."UserRole" ur
-    WHERE ur.user_id = u.id AND ur.role_id = r.id
-      AND ur.is_deleted = false AND ur.is_active = true
+    SELECT 1
+    FROM public."UserRole" ur
+    WHERE ur.user_id = u.id
+      AND ur.role_id = r.id
+      AND ur.is_deleted = false
+      AND ur.is_active = true
   );
 SQL
