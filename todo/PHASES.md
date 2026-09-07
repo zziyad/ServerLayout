@@ -73,3 +73,41 @@
 6. `application/db/migrations/025–027` — email outbox / settings
 
 Не источник правды: `zi-schema.sql`, helpdesk `004–009` (уже удалены).
+
+---
+
+## Фаза 4 — локальный LLM-агент
+
+Цикл: User → `agent/chat` → llama-server → tool decision → Node tool → llama → answer.
+
+- [x] 4.1 Config `application/config/llm.js` (`LLM_BASE_URL`, default `http://127.0.0.1:8080`)
+- [x] 4.2 `lib/llm/{client,tools,agent}` — OpenAI `/v1/chat/completions`, whitelist tools
+- [x] 4.3 RPC `agent/chat` (`access: private`, JSON Schema, no SQL)
+- [ ] 4.4 Новые tools только whitelist в `lib/llm/tools.js`. Не отдавать LLM произвольный RPC.
+- [ ] 4.5 История диалога в Postgres — не делать, пока не закрыт 4.4
+
+---
+
+## Фаза 5 — каталог файлов и поиск
+
+Цель: быстро найти какой файл нужен в ситуации. Корпус растёт.
+
+Канон: `docs/ADR-002-file-search.md`.  
+Это не возврат старого продукта index-search (запрещён ADR-001).
+
+Существующий диск-RPC не ломать и не переименовывать:
+
+`files/upload` · `files/download` · `files/list` · `files/hash`
+
+- [ ] 5.0 Контракт зафиксирован (этот пункт + ADR-002). Реализацию не начинать, пока 5.0 не прочитан.
+- [ ] 5.1 Инвентарь `application/api/files/*`: какие поля отдаёт list/upload сейчас. Новый payload только additive.
+- [ ] 5.2 Additive SQL `028+`: таблица `File` (id, owner, name, mime, size, hash, disk_path, directory, tags, timestamps, soft-delete). Текст и `tsvector` — та же таблица или `FileText`. GIN. Без DROP/RENAME.
+- [ ] 5.3 Четыре слоя для новых действий: `files/get`, `files/search`, `files/index`. Папка entity = `files`. Schema + `validateEndpoint`. SQL только в repository. LIMIT ≤ 100.
+- [ ] 5.4 Extractor после upload (очередь, не внутри RPC): pdf/docx/xlsx/txt/csv/json → текст. Бинарник без текста — только метаданные.
+- [ ] 5.5 `files/search` = Postgres FTS (`plainto_tsquery` / `ts_rank` + GIN). ACL из PG, не с диска.
+- [ ] 5.6 Права: `file.read` / `file.write` в seed. Смену `access: public` у старых upload/list **не** делать в том же патче, что поиск.
+- [ ] 5.7 Sidecar Meilisearch или Tantivy — только если 5.5 уже в проде и упираемся. Не SQLite FTS5. Не FFI в Node.
+- [ ] 5.8 Эмбеддинги (смысл «ситуации») — после 5.7. Llama не индекс.
+- [ ] 5.9 Tool агента `files_search` — только после 5.5 и в whitelist 4.4.
+
+Не делать в этой фазе: gate-pass директории как канон, `file/` вместо `files/`, поиск в repository через внешний движок, полная выгрузка списка в JS.

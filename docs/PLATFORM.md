@@ -54,7 +54,18 @@
 CRUD department, departmentRoleTemplate, departmentRoleAssignment, структура дерева.
 
 ### Файлы
-upload / download / list / hash. Стримы на WS.
+Сейчас на диске, стримы по WS:
+
+| метод | смысл |
+|---|---|
+| `files/upload` | WS upload в `uploads/{directory}` |
+| `files/download` | WS download |
+| `files/list` | список файлов каталога на диске |
+| `files/hash` | хеш файла |
+
+Каталог в Postgres + поиск — фаза 5, `docs/ADR-002-file-search.md`.  
+Не путать со старым продуктом index-search (запрещён).  
+Движок по умолчанию: Postgres FTS. Sidecar (Meilisearch/Tantivy) и эмбеддинги — позже. SQLite FTS5 не используем.
 
 ### Уведомления и почта
 - очередь + dispatcher + web-push (подписка, ключ, send);
@@ -63,6 +74,19 @@ upload / download / list / hash. Стримы на WS.
 ### Система
 `health` (Postgres `SELECT 1` + Redis `PING`; ответ `ok` / `degraded`), часы/timeSync, introspect, планировщик (`system/scheduler/*`).
 Тесты без живой БД: `npm test` (`test/*.test.js`).
+
+### Локальный агент (llama.cpp)
+`agent/chat` — сессия обязательна (`private`). Node держит цикл, модель только выбирает tool.
+
+```
+User → agent/chat → llama /v1/chat/completions
+                 → tool_calls → Node lib.llm.tools
+                 → tool result → llama
+                 → answer
+```
+
+Конфиг: `application/config/llm.js`. Env: `LLM_BASE_URL` (по умолчанию `http://127.0.0.1:8080`), `LLM_MODEL`, `LLM_ENABLED=0` выключает.
+Tools whitelist: `now`, `whoami`, `health`. История запроса в `messages`, в БД не пишется.
 
 ---
 
@@ -110,6 +134,10 @@ REDIS_HOST / REDIS_PORT / REDIS_PASSWORD
 
 Запуск: `npm start` → API на порту 8010.
 
+Docker (API + Postgres + Redis): `docker compose up -d --build`.  
+API `127.0.0.1:8010`, логин `admin@gp.com` / `password`.  
+Llama с хоста: `LLM_BASE_URL=http://host.docker.internal:8080`.
+
 Пример входа:
 
 ```json
@@ -127,7 +155,8 @@ REDIS_HOST / REDIS_PORT / REDIS_PASSWORD
 
 ## Чего это не умеет (намеренно)
 
-- Нет домена gate-pass / helpdesk / control-center.
+- Нет домена gate-pass / helpdesk / control-center / старого index-search.
+- Нет готового файлового поиска (фаза 5, ADR-002).
 - Нет готового фронтенда в этом дереве.
 - JWT как основной механизм не используется — сессия в Redis + cookie.
 - `zi-schema.sql` не источник правды для новой базы.
@@ -142,7 +171,8 @@ REDIS_HOST / REDIS_PORT / REDIS_PASSWORD
 |---|---|
 | `docs/PLATFORM.md` | что умеет сервер |
 | `todo/PHASES.md` | очередь работ |
-| `docs/ADR-001-platform.md` | зафиксированные решения |
+| `docs/ADR-001-platform.md` | зафиксированные решения платформы |
+| `docs/ADR-002-file-search.md` | каталог файлов и поиск |
 | `AGENTS.project.md` (корень artifacts) | правила для агента |
 | скилл `nodejs-js-orchestrator` | слои + необратимые правки |
 
@@ -152,3 +182,4 @@ REDIS_HOST / REDIS_PORT / REDIS_PASSWORD
 - cookie `session_id` и форма сессии в Redis
 - разрушающие миграции и enum в Postgres
 - лимиты списка (`user/list` max 100) — не выгружать всю таблицу в JS
+- имена `files/upload` `files/download` `files/list` `files/hash` — не переименовывать; поиск = новый метод `files/search`

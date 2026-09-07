@@ -21,7 +21,8 @@ Must already include, so it is not rewritten each time:
 - **email** system
 - sessions (Redis in this tree)
 
-Gate-pass domain is removed. Do not add it back.
+Gate-pass domain is removed. Do not add it back.  
+Old index-search product is removed. File catalog/search is ADR-002 (Postgres FTS first, not SQLite FTS5, not that product).
 
 ## Architecture to keep
 
@@ -44,6 +45,7 @@ RPC runner (`runRpc`) owns abort + access log. Chain has no `next()`:
 1. Inspect server2 first.
 2. Smallest change that keeps the platform reusable.
 3. Refactor later; do not invent a new product domain.
+4. After any file change, the reply must list every file created, updated, or deleted. Paths only, grouped by action. Do this even for one file.
 
 ## Cheap vs expensive changes
 
