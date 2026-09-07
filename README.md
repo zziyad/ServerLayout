@@ -6,7 +6,7 @@
 
 **[docs/PLATFORM.md](docs/PLATFORM.md)**
 
-Зафиксированные решения: [docs/ADR-001-platform.md](docs/ADR-001-platform.md)  
+Зафиксированные решения: [docs/ADR-001-platform.md](docs/ADR-001-platform.md), [docs/ADR-002-file-search.md](docs/ADR-002-file-search.md)  
 Работы по фазам: [todo/PHASES.md](todo/PHASES.md)  
 Правила агента: [AGENTS.project.md](AGENTS.project.md)
 
