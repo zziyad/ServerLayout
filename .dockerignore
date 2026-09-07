@@ -1,0 +1,15 @@
+node_modules
+application/node_modules
+.git
+.gitignore
+log
+uploads
+backups
+test
+todo
+nginx
+docker/postgres/init
+*.md
+.env
+.env.*
+certs-old
