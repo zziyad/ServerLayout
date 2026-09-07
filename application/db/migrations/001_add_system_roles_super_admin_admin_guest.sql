@@ -13,7 +13,7 @@ INSERT INTO public."Role" (name, display_name, description, is_system, is_active
 SELECT 'guest', 'Guest', 'Limited read-only or unauthenticated access.', true, true, false
 WHERE NOT EXISTS (SELECT 1 FROM public."Role" WHERE name = 'guest' AND is_deleted = false);
 
--- Assign super_admin role to user 568a6282-9b06-41c2-804a-84ad61365b83 (self-assign; idempotent)
+-- Legacy hardcoded user/role pair. Skip unless both rows exist.
 INSERT INTO public."UserRole" (user_id, role_id, assigned_by, is_active, is_deleted)
 SELECT
   '568a6282-9b06-41c2-804a-84ad61365b83'::uuid,
@@ -21,7 +21,15 @@ SELECT
   '568a6282-9b06-41c2-804a-84ad61365b83'::uuid,
   true,
   false
-WHERE NOT EXISTS (
+WHERE EXISTS (
+  SELECT 1 FROM public."User"
+  WHERE id = '568a6282-9b06-41c2-804a-84ad61365b83'::uuid
+)
+AND EXISTS (
+  SELECT 1 FROM public."Role"
+  WHERE id = 'a7e1eb08-b123-4530-a155-a55291d9f2dd'::uuid
+)
+AND NOT EXISTS (
   SELECT 1 FROM public."UserRole"
   WHERE user_id = '568a6282-9b06-41c2-804a-84ad61365b83'::uuid
     AND role_id = 'a7e1eb08-b123-4530-a155-a55291d9f2dd'::uuid
