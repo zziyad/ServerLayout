@@ -9,7 +9,9 @@
 
 В шаблоне уже есть: session auth, user/role/permission, JSON Schema validator, notification, email.
 
-Нет и не возвращать: gate-pass, helpdesk, control-center, index-search.
+Нет и не возвращать: gate-pass, helpdesk, control-center, старый продукт index-search.
+
+Поиск по файлам платформы — не тот продукт. Решение: `docs/ADR-002-file-search.md`.
 
 ## Контракт, который нельзя тихо снять
 
@@ -43,3 +45,4 @@ AbortSignal живёт столько же, сколько RPC. Закрытие
 - скилл `nodejs-js-orchestrator` + `references/irreversible.md`
 - `docs/PLATFORM.md`
 - `todo/PHASES.md`
+- `docs/ADR-002-file-search.md`
